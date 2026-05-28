@@ -1,6 +1,3 @@
-bash
-
-cat > /home/claude/pochi-budget/index.html << 'HTMLEOF'
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -54,12 +51,18 @@ cat > /home/claude/pochi-budget/index.html << 'HTMLEOF'
     }
 
     /* ── APP SHELL ── */
-    .app {
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
-      width: 100%;
-    }
+    .app{
+  font-family:'Press Start 2P',monospace;
+  background:#fdf0f8;
+  min-height:100vh;
+  width:100%;
+  max-width:1400px;
+  margin:0 auto;
+  display:flex;
+  flex-direction:column;
+  image-rendering:pixelated;
+  overflow-x:hidden;
+}
 
     /* ── TOPBAR ── */
     .topbar {
@@ -171,7 +174,11 @@ cat > /home/claude/pochi-budget/index.html << 'HTMLEOF'
     .tab-btn.active { color: var(--col-primary); border-bottom-color: var(--col-accent); }
 
     /* ── SCREEN / PAGE BODY ── */
-    .screen { display: none; padding: var(--pad-md); }
+    .screen .screen{
+  display:none;
+  padding:18px;
+  width:100%;
+}
     .screen.active { display: block; }
     .page-body { padding: var(--pad-md); }
 
@@ -218,12 +225,12 @@ cat > /home/claude/pochi-budget/index.html << 'HTMLEOF'
     .pochi-mood { font-size: var(--font-xs); color: var(--col-muted); margin-bottom: 6px; }
 
     /* ── STAT GRID ── */
-    .stat-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: clamp(8px, 1.5vw, 14px);
-      margin-bottom: clamp(10px, 2vw, 16px);
-    }
+   .stat-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+  gap:14px;
+  margin-bottom:16px;
+}
     .stat-card {
       background: #fff0fa;
       border: 3px solid var(--col-border);
@@ -968,7 +975,3 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
 </script>
 </body>
 </html>
-HTMLEOF
-Output
-
-exit code 0
