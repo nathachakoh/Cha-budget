@@ -18,69 +18,87 @@
        4. Enable Firestore (Build → Firestore Database → Start in test mode)
        5. Enable Anonymous Auth (Build → Authentication → Sign-in method → Anonymous)
        ============================================================ -->
-  <script type="module">
-    import { initializeApp }              from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getAuth, signInAnonymously, onAuthStateChanged }
-                                          from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import { getFirestore, doc, setDoc, onSnapshot, getDoc }
-                                          from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import {
+  getAuth,
+  signInAnonymously,
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
-    /* ── REPLACE THIS BLOCK WITH YOUR FIREBASE CONFIG ── */
-    const firebaseConfig = {
-      apiKey:            "YOUR_API_KEY",
-      authDomain:        "YOUR_PROJECT.firebaseapp.com",
-      projectId:         "YOUR_PROJECT_ID",
-      storageBucket:     "YOUR_PROJECT.appspot.com",
-      messagingSenderId: "YOUR_SENDER_ID",
-      appId:             "YOUR_APP_ID"
-    };
-    /* ─────────────────────────────────────────────────── */
+import {
+  getFirestore,
+  doc,
+  setDoc,
+  onSnapshot,
+  getDoc
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-    const app  = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db   = getFirestore(app);
+/* ── FIREBASE CONFIG ── */
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
 
-    let uid = null;
-    let unsub = null;
+/* ── INIT ── */
+const app  = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db   = getFirestore(app);
 
-    /* Sign in anonymously so each browser gets a unique ID */
-    signInAnonymously(auth).catch(e => {
-      console.warn("Firebase auth failed – running in offline mode:", e.message);
-      window.__firebaseReady = false;
-    });
+let uid = null;
+let syncingFromCloud = false;
 
-    onAuthStateChanged(auth, async user => {
-      if (!user) return;
-      uid = user.uid;
-      window.__firebaseReady = true;
+/* ── AUTH (anonymous login per device) ── */
+signInAnonymously(auth).catch(console.error);
 
-      const ref = doc(db, "budgets", uid);
+onAuthStateChanged(auth, async (user) => {
+  if (!user) return;
 
-      /* Push local state → cloud on first load if cloud empty */
-      const snap = await getDoc(ref);
-      if (!snap.exists()) {
-        await setDoc(ref, window.__getState());
-      }
+  uid = user.uid;
+  window.__firebaseReady = true;
 
-      /* Real-time listener: update app whenever cloud changes */
-      unsub = onSnapshot(ref, snapshot => {
-        if (!snapshot.exists()) return;
-        const data = snapshot.data();
-        window.__applyState(data);
-        window.__renderAll();
-      });
-    });
+  const ref = doc(db, "budgets", uid);
 
-    /* Called by app when it wants to save to cloud */
-    window.__cloudSave = async (state) => {
-      if (!uid) return;
-      try {
-        await setDoc(doc(db, "budgets", uid), state);
-      } catch(e) {
-        console.warn("Cloud save failed:", e.message);
-      }
-    };
-  </script>
+  /* ── FIRST LOAD: pull cloud → local state ── */
+  const snap = await getDoc(ref);
+  if (snap.exists()) {
+    syncingFromCloud = true;
+    window.__applyState(snap.data());
+    window.__renderAll();
+    syncingFromCloud = false;
+  } else {
+    await setDoc(ref, window.__getState());
+  }
+
+  /* ── REAL-TIME SYNC LISTENER ── */
+  onSnapshot(ref, (snapshot) => {
+    if (!snapshot.exists()) return;
+
+    syncingFromCloud = true;
+    window.__applyState(snapshot.data());
+    window.__renderAll();
+    syncingFromCloud = false;
+  });
+});
+
+/* ── SAVE TO CLOUD (called by your app.js save()) ── */
+window.__cloudSave = async (state) => {
+  if (!uid) return;
+
+  try {
+    const ref = doc(db, "budgets", uid);
+
+    await setDoc(ref, state, { merge: true });
+
+  } catch (e) {
+    console.warn("Cloud save failed:", e.message);
+  }
+};
+</script>
 
   <style>
     /* ═══════════════════════════════════════════════════
