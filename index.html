@@ -19,68 +19,28 @@
        5. Enable Anonymous Auth (Build → Authentication → Sign-in method → Anonymous)
        ============================================================ -->
   <script type="module">
-    import { initializeApp }              from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getAuth, signInAnonymously, onAuthStateChanged }
-                                          from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import { getFirestore, doc, setDoc, onSnapshot, getDoc }
-                                          from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-analytics.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
 
-    /* ── REPLACE THIS BLOCK WITH YOUR FIREBASE CONFIG ── */
-    const firebaseConfig = {
-      apiKey:            "YOUR_API_KEY",
-      authDomain:        "YOUR_PROJECT.firebaseapp.com",
-      projectId:         "YOUR_PROJECT_ID",
-      storageBucket:     "YOUR_PROJECT.appspot.com",
-      messagingSenderId: "YOUR_SENDER_ID",
-      appId:             "YOUR_APP_ID"
-    };
-    /* ─────────────────────────────────────────────────── */
+  // Your web app's Firebase configuration
+  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+  const firebaseConfig = {
+    apiKey: "AIzaSyDfbBPd3xsr1y0Nvz0nuKuoCPE7Gyn_oms",
+    authDomain: "budget-tracker-39eeb.firebaseapp.com",
+    projectId: "budget-tracker-39eeb",
+    storageBucket: "budget-tracker-39eeb.firebasestorage.app",
+    messagingSenderId: "508611181918",
+    appId: "1:508611181918:web:50ffd870ffa2436759a3cf",
+    measurementId: "G-N1GYWN1CBN"
+  };
 
-    const app  = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db   = getFirestore(app);
-
-    let uid = null;
-    let unsub = null;
-
-    /* Sign in anonymously so each browser gets a unique ID */
-    signInAnonymously(auth).catch(e => {
-      console.warn("Firebase auth failed – running in offline mode:", e.message);
-      window.__firebaseReady = false;
-    });
-
-    onAuthStateChanged(auth, async user => {
-      if (!user) return;
-      uid = user.uid;
-      window.__firebaseReady = true;
-
-      const ref = doc(db, "budgets", uid);
-
-      /* Push local state → cloud on first load if cloud empty */
-      const snap = await getDoc(ref);
-      if (!snap.exists()) {
-        await setDoc(ref, window.__getState());
-      }
-
-      /* Real-time listener: update app whenever cloud changes */
-      unsub = onSnapshot(ref, snapshot => {
-        if (!snapshot.exists()) return;
-        const data = snapshot.data();
-        window.__applyState(data);
-        window.__renderAll();
-      });
-    });
-
-    /* Called by app when it wants to save to cloud */
-    window.__cloudSave = async (state) => {
-      if (!uid) return;
-      try {
-        await setDoc(doc(db, "budgets", uid), state);
-      } catch(e) {
-        console.warn("Cloud save failed:", e.message);
-      }
-    };
-  </script>
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+</script>
 
   <style>
     /* ═══════════════════════════════════════════════════
